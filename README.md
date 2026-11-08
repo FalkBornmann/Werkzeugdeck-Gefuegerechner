@@ -25,3 +25,6 @@ Alle sieben eigenen Grafiken: PNG und echte SVG-Vektoren mit identischer Zeichen
 ## ZTU-Darstellung
 
 Gefüllte Bereiche mit Start-/Endgrenzen. TTT: 1/99 % der isolierten Reaktion. CCT: 1/99 % des bei 20 °C erreichten Endanteils je Bestandteil und Kühlrate; nur Bestandteile ab 1 % Endanteil. Diese Darstellung ist ausdrücklich kein 99-%-Gesamtgefüge-Kriterium. Drei äquivalente logarithmische Zeitachsen in s, min und h verwenden Zehnerpotenzen. Schwarz-Weiß-Auswahl gilt für alle lokalen Grafiken und ihre PNG-/SVG-Exporte; ZTU-Flächen erhalten Vektorschraffuren bzw. Punktmuster. Sechs separate Gefügeskizzen erklären idealisierte Morphologien ohne reale Kornberechnung.
+
+## Zeitsteuerung
+Bei aktivem Simulationsverlauf läuft die Zeitsteuerung am unteren Bildschirmrand mit. Derselbe Regler steuert alle Grafiken. Die vorhandenen Wiedergabe- und Positionsfunktionen sind auch beim Betrachten weiter unten liegender Diagramme erreichbar. Die Leiste passt sich Mobilgeräten an und lässt sich mit Tastatur und Touch bedienen.
