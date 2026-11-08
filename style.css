@@ -3,3 +3,7 @@
 .plot-dialog{border:1px solid #b9c8ba;border-radius:14px;width:min(96vw,1180px);max-height:94vh;padding:20px;color:var(--ink)}.plot-dialog::backdrop{background:#102d2488}.plot-scroll{overflow:auto;max-width:100%}.plot-scroll canvas{display:block;width:1080px;height:440px;max-width:none}.plot-dialog .chart-head button{flex:none}
 
 .print-switch{display:flex;align-items:center;gap:10px;margin:12px 0 18px;font-weight:650}.print-switch input{flex:none}.plot-scroll canvas{height:auto}.monochrome .phase-list span{border-color:#444!important}.monochrome .chart{border-color:#777}@media print{body{background:white;color:black}header{background:white!important;color:black;border-bottom:2px solid black}header p,header a,.eyebrow{color:black}.workflow,.exports,.controls,#prozess,.timeline,footer{display:none}.layout{display:block}.card{break-inside:avoid;border-color:#aaa}canvas{max-width:100%}}
+
+.plot-dialog[open]{display:flex;flex-direction:column;overflow:hidden;max-height:94dvh}
+.plot-dialog .plot-scroll{flex:1;min-height:80px;overflow:auto}
+.plot-dialog>.timeline-dock{position:static;flex:none;padding:10px 0 0;margin-top:12px;max-height:40dvh;box-shadow:none;overflow:auto}
