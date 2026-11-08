@@ -1,3 +1,4 @@
+import './export-menu.js';
 import {probeIndex} from './spatial.js';
 import {processCondition,isothermalWindows} from './process-path.js';
 import {mountTimelineDock} from './timeline-dock.js';
@@ -57,3 +58,31 @@ const zoomDialog=document.createElement('dialog');zoomDialog.className='plot-dia
 for(const kind of kinds){const button=document.createElement('button');button.type='button';button.dataset.zoom=kind;button.textContent='Vergrößern';$(kind).closest('.card').querySelector('.exports').append(button);}
 document.addEventListener('click',e=>{const button=e.target.closest('[data-zoom]');if(!button)return;stop();const size=figureSize(button.dataset.zoom);$('zoom-canvas').width=size.width;$('zoom-canvas').height=size.height;render(button.dataset.zoom,$('zoom-canvas').getContext('2d'),state());zoomKind=button.dataset.zoom;timelineDock.setHost(zoomDialog);zoomDialog.showModal();});
 $('group').value='all';populate('c45');
+
+WDExports.mount({
+  anchor: document.querySelector('[data-export="temperature"]').parentElement,
+  defaultItem: 'temperature',
+  legacyButtons: [...document.querySelectorAll('[data-export]')],
+  items: [['temperature','Temperaturverlauf'],['scene','Werkstück'],['profile','Räumliches Profil'],['fractions','Gefüge über die Zeit'],['ztu','ZTU-Diagramm'],['equilibrium','Eisen–Zementit-Diagramm'],['schematic','Gefügeschemata']].map(([id,label]) => {
+    const item = {
+      id, label,
+      enabled: () => !document.querySelector('[data-export="'+id+'"]').disabled,
+      save: format => document.querySelector('[data-export="'+id+'"][data-format="'+format+'"]').click()
+    };
+    if (!['equilibrium','schematic'].includes(id)) {
+      item.videoReady = () => !!result && !worker;
+      item.video = () => {
+        stop();
+        if (!result) throw new Error('Zuerst die Simulation berechnen.');
+        const previous = index, last = result.frames.length - 1;
+        return {
+          title: 'Gefügerechner · ' + label, color: '#513821',
+          frame: fraction => { index = Math.round(fraction * last); $('timeline').value = index; draw(); return $(id); },
+          caption: () => $('clock').textContent,
+          restore: () => { index = previous; $('timeline').value = index; draw(); }
+        };
+      };
+    }
+    return item;
+  })
+});
