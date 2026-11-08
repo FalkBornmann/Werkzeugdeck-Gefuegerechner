@@ -79,6 +79,18 @@ export function average(data,grid){const v=grid.reduce((a,g)=>a+g.volume,0);if(t
 export function diagrams(m){
  if(!m.kinetic)return {ttt:[],cct:[]};const ttt=[];
  for(let T=200;T<=720;T+=8)for(const type of ['P','B']){const t1=tttStart(m,T,type);if(Number.isFinite(t1))ttt.push({T,type,t1,t99:t1*Math.sqrt(Math.log(100)/(-Math.log(.99)))});}
- const cct=[];for(let j=0;j<=42;j++){const rate=10**(-3+j*5/42),s=blankState();let t=0;const events={};for(let T=m.aust;T>=20;T-=2){const dt=2/rate;t+=dt;transform(s,m,T,dt);for(const [key,val] of [['FP',s.F+s.P],['B',s.B],['M',s.M+s.TM]])for(const threshold of [.01,.5]){const id=key+threshold;if(!events[id]&&val>=threshold){events[id]=true;cct.push({T,t,type:key,threshold,rate});}}}}
+ const cct=[];
+ for(let j=0;j<=60;j++){
+  const rate=10**(-3+j*5/60),s=blankState(),history=[{T:m.aust,t:0,FP:0,B:0,M:0}];let t=0;
+  // Include exactly 20 °C, also for odd or fractional austenitising temperatures.
+  for(let T=m.aust;T>20;){const next=Math.max(20,T-2),dt=(T-next)/rate;transform(s,m,next,dt);t+=dt;T=next;history.push({T,t,FP:s.F+s.P,B:s.B,M:s.M+s.TM});}
+  for(const type of ['FP','B','M']){
+   const terminal=history.at(-1)[type];if(terminal<.01)continue;
+   for(const threshold of [.01,.99]){
+    const target=terminal*threshold;const i=history.findIndex(h=>h[type]>=target);if(i<1)continue;const a=history[i-1],b=history[i],f=clamp((target-a[type])/(b[type]-a[type]),0,1);
+    cct.push({T:a.T+f*(b.T-a.T),t:a.t+f*(b.t-a.t),type,threshold,rate,terminal,basis:'fraction-of-terminal-product-at-20C'});
+   }
+  }
+ }
  return {ttt,cct};
 }

@@ -1,3 +1,6 @@
+import {renderZtu} from './ztu-render.js';
+import {renderSchematic} from './schematic-render.js';
+import {inkContext} from './figure-style.js';
 import {PHASES,LABELS,COLORS,critical,clamp} from './model.js';
 const W=1080,H=440;
 const fmt=x=>Math.abs(x)>=1000?Math.round(x).toLocaleString('de-DE'):Number(x.toFixed(2)).toLocaleString('de-DE');
@@ -13,17 +16,9 @@ function axes(c,title,xmax,ymax,{xmin=0,ymin=0,log=false,xlabel='',ylabel='',not
  line(c,[[82,85],[82,365],[1007,365]],'#53645b',1);text(c,ylabel,82,75,'#53645b',14);text(c,xlabel,470,420,'#53645b',16);return {x,y};
 }
 function legend(c,items){let x=95;for(const [label,color] of items){c.fillStyle=color;c.fillRect(x,433-38,12,12);text(c,label,x+17,406,color,13);x+=label.length*7+45;}}
-export function render(kind,c,v){const {m,diagram,result,index=0,probe=0,view='temperature',ztu='ttt'}=v;const f=result?.frames[Math.min(index,result.frames.length-1)];const stamp=m.name+(f?' · t = '+fmt(f.time)+' s':'');
- if(kind==='ztu'){
- const a=axes(c,(ztu==='ttt'?'Isothermes ZTU / TTT':'Kontinuierliches ZTU / CCT')+' · '+m.name,1e6,950,{xmin:.01,log:true,xlabel:'Zeit seit Umwandlungstemperatur / Kühlbeginn [s] · logarithmisch',ylabel:'Temperatur [°C]',note:m.kinetic?'Unkalibriertes Lehrmodell · durchgezogen: 1 % · gestrichelt: '+(ztu==='ttt'?'99 % einer Einzelreaktion':'50 % Gesamtgefügeanteil'):'Kein numerisches ZTU hinterlegt · Originalquellen stehen direkt darunter'});
- if(!m.kinetic){text(c,'Keine Ersatzkurven aus einem ungeeigneten Modell.',230,210,'#72572b',22);return;}
- if(ztu==='ttt'){for(const type of ['P','B']){const pts=diagram.ttt.filter(p=>p.type===type);for(const field of ['t1','t99'])line(c,pts.map(p=>[a.x(p[field]),a.y(p.T)]),COLORS[type],3,field==='t99'?[7,5]:[]);}}
- else {for(const type of ['FP','B','M'])for(const threshold of [.01,.5]){const pts=diagram.cct.filter(p=>p.type===type&&p.threshold===threshold);line(c,pts.map(p=>[a.x(p.t),a.y(p.T)]),COLORS[type==='FP'?'P':type],3,threshold===.5?[7,5]:[]);}}
- const ms=critical(m).ms;line(c,[[82,a.y(ms)],[1007,a.y(ms)]],COLORS.M,1,[5,5]);text(c,'Ms ≈ '+Math.round(ms)+' °C',840,a.y(ms)-8,COLORS.M,14);
- if(f&&ztu==='cct'){const stages=result.stages;let origin=0,old=20,end=result.total,found=false,clock=0;for(const s of stages){if(!found&&s.target<old){origin=clock;found=true;}if(found&&s.target>old){end=clock;break;}clock+=s.duration;old=s.target;}
- for(const [i,col] of [[0,'#111827'],[result.grid.length-1,'#a25b28']]){const frames=result.frames.filter(p=>p.time>=origin&&p.time<=Math.min(f.time,end));line(c,frames.map(p=>[a.x(Math.max(.01,p.time-origin)),a.y(p.temps[i])]),col,2,[2,3]);}}
- text(c,'Grün: Ferrit/Perlit · Blau: Bainit · Rot: Martensit',100,402,'#384e43',15);return;
- }
+export function render(kind,c,v){if(v.monochrome&&!v._ink)return render(kind,inkContext(c),{...v,_ink:true});const {m,diagram,result,index=0,probe=0,view='temperature',ztu='ttt'}=v;const f=result?.frames[Math.min(index,result.frames.length-1)];const stamp=m.name+(f?' · t = '+fmt(f.time)+' s':'');
+ if(kind==='ztu')return renderZtu(c,v);
+ if(kind==='schematic')return renderSchematic(c,v);
  if(kind==='equilibrium'){
  const a=axes(c,'Eisen–Zementit-Diagramm · Stahlausschnitt',2.1,1250,{ymin:20,xlabel:'Kohlenstoff [Massen-%]',ylabel:'Temperatur [°C]',note:'Vereinfachte Gleichgewichtsgrenzen · kein Zeitmodell · für legierte Stähle nur Orientierung'});
  const pts=[];for(let C=.02;C<=.76;C+=.01)pts.push([a.x(C),a.y(910-203*Math.sqrt(C))]);line(c,pts,'#235846',3);line(c,[[a.x(.76),a.y(727)],[a.x(2.1),a.y(727+220*(2.1-.76))]],'#235846',3);line(c,[[a.x(0),a.y(727)],[a.x(2.1),a.y(727)]],'#235846',2);line(c,[[a.x(2),85],[a.x(2),365]],'#986d37',1,[5,5]);

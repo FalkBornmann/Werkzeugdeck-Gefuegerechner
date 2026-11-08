@@ -20,4 +20,8 @@ Node >=20: npm test. Für Vorschau über einen HTTP-Server öffnen, da Module/Wo
 
 ## Exporte
 
-Alle sechs eigenen Grafiken: PNG und echte SVG-Vektoren mit identischer Zeichenroutine, Daten, Markierung, Zeit und gewähltem Zustand. CSV enthält alle gespeicherten Zeitpunkte/Orte und Modellhinweise; JSON enthält vollständige Parameter und Ergebniszustände. Downloads lokal. Keine Messdatenübertragung oder persistente Speicherung.
+Alle sieben eigenen Grafiken: PNG und echte SVG-Vektoren mit identischer Zeichenroutine, Daten, Markierung, Zeit und gewähltem Zustand. CSV enthält alle gespeicherten Zeitpunkte/Orte und Modellhinweise; JSON enthält vollständige Parameter und Ergebniszustände. Downloads lokal. Keine Messdatenübertragung oder persistente Speicherung.
+
+## ZTU-Darstellung
+
+Gefüllte Bereiche mit Start-/Endgrenzen. TTT: 1/99 % der isolierten Reaktion. CCT: 1/99 % des bei 20 °C erreichten Endanteils je Bestandteil und Kühlrate; nur Bestandteile ab 1 % Endanteil. Diese Darstellung ist ausdrücklich kein 99-%-Gesamtgefüge-Kriterium. Drei äquivalente logarithmische Zeitachsen in s, min und h verwenden Zehnerpotenzen. Schwarz-Weiß-Auswahl gilt für alle lokalen Grafiken und ihre PNG-/SVG-Exporte; ZTU-Flächen erhalten Vektorschraffuren bzw. Punktmuster. Sechs separate Gefügeskizzen erklären idealisierte Morphologien ohne reale Kornberechnung.
