@@ -1,0 +1,1 @@
+import {run} from './model.js';self.onmessage=e=>{try{const {id,m,stages,options}=e.data;self.postMessage({id,result:run(m,stages,options)});}catch(error){self.postMessage({id:e.data.id,error:error.message});}};
