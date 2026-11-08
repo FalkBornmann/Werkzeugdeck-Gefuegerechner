@@ -31,19 +31,21 @@ export function hardness(s,m,T=20){
  const hv=s.F*95+s.P*(200+90*m.c)+s.B*(240+240*m.c)+s.M*hvM+s.TM*hvTM+s.A*150;
  return {hv,rm:hv>=100&&hv<=400?3.2*hv:null};
 }
-export const PROCESSES=[['quench','Härten'],['temper','Härten und Anlassen / Vergüten'],['normalize','Normalglühen'],['anneal','Vollglühen · langsam abkühlen'],['isothermal','Isotherm umwandeln / Bainitisieren'],['stress','Spannungsarmglühen'],['custom','Eigener Temperatur-Zeit-Verlauf']];
+export const PROCESSES=[['quench','Härten'],['temper','Härten und Anlassen / Vergüten'],['normalize','Normalglühen'],['anneal','Vollglühen · langsam abkühlen'],['isothermal','Isotherm umwandeln / Bainitisieren'],['soft','Weichglühen · thermischer Verlauf'],['stress','Spannungsarmglühen'],['custom','Eigener Temperatur-Zeit-Verlauf']];
+function withModes(stages){let previous=20;return stages.map(s=>{const mode=s.target<previous&&!/Ofen|Langsam/.test(s.label)?'step':'ramp';previous=s.target;return {...s,mode};});}
 export function preset(m,name){
  const a=m.aust,h=m.hold,tem=m.temper;
  const stages=[{duration:Math.max(600,(a-20)/.5),target:a,h:120,label:'Aufheizen (Ofen)'},{duration:h,target:a,h:120,label:'Halten (Ofen)'}];
- if(name==='stress')return [{duration:1800,target:550,h:120,label:'Aufheizen'},{duration:3600,target:550,h:120,label:'Spannungsarm halten'},{duration:7200,target:20,h:50,label:'Langsam abkühlen'}];
+ if(name==='soft')return withModes([{duration:2400,target:700,h:120,label:'Aufheizen'},{duration:7200,target:700,h:120,label:'Subkritisch halten (thermisch)'},{duration:36000,target:600,h:120,label:'Langsame Ofenabkühlung'},{duration:7200,target:20,h:45,label:'Abkühlen'},{duration:3600,target:20,h:45,label:'Bei Raumtemperatur auskühlen'}]);
+ if(name==='stress')return withModes([{duration:1800,target:550,h:120,label:'Aufheizen'},{duration:3600,target:550,h:120,label:'Spannungsarm halten'},{duration:7200,target:20,h:50,label:'Langsam abkühlen'},{duration:3600,target:20,h:45,label:'Bei Raumtemperatur auskühlen'}]);
  if(name==='normalize')stages.push({duration:7200,target:20,h:45,label:'Luftkühlen'});
  else if(name==='anneal')stages.push({duration:36000,target:600,h:120,label:'Ofenabkühlung'},{duration:7200,target:20,h:45,label:'Luftkühlen'});
  else if(name==='isothermal')stages.push({duration:180,target:380,h:1500,label:'Ins Warmbad'},{duration:5400,target:380,h:1500,label:'Isotherm halten'},{duration:3600,target:20,h:45,label:'Luftkühlen'});
  else {stages.push({duration:900,target:20,h:1200,label:'Abschrecken (Öl, Modellwert)'});if(name==='temper'){
  const n=m.referenceOnly?3:1;for(let i=0;i<n;i++)stages.push({duration:1800,target:tem,h:120,label:'Anlassen: Aufheizen '+(i+1)},{duration:7200,target:tem,h:120,label:'Anlassen: Halten '+(i+1)},{duration:3600,target:20,h:45,label:'Zwischen-/Endkühlung '+(i+1)});
- }}stages.push({duration:3600,target:20,h:45,label:'Bei Raumtemperatur auskühlen'});return stages;
+ }}stages.push({duration:3600,target:20,h:45,label:'Bei Raumtemperatur auskühlen'});return withModes(stages);
 }
-export function validateStages(stages){if(!Array.isArray(stages)||!stages.length||stages.length>20)throw Error('1 bis 20 Prozessschritte erforderlich.');let total=0;for(const s of stages){for(const key of ['duration','target','h'])if(!Number.isFinite(s[key]))throw Error('Alle Prozessparameter müssen Zahlen sein.');if(s.duration<1||s.duration>86400||s.target<0||s.target>1250||s.h<1||s.h>15000)throw Error('Grenzen: 1–86400 s, 0–1250 °C, 1–15000 W/(m² K).');total+=s.duration;}if(total>172800)throw Error('Gesamtdauer höchstens 48 Stunden.');return total;}
+export function validateStages(stages){if(!Array.isArray(stages)||!stages.length||stages.length>20)throw Error('1 bis 20 Prozessschritte erforderlich.');let total=0;for(const s of stages){for(const key of ['duration','target','h'])if(!Number.isFinite(s[key]))throw Error('Alle Prozessparameter müssen Zahlen sein.');if(s.duration<1||s.duration>86400||s.target<0||s.target>1250||s.h<1||s.h>15000)throw Error('Grenzen: 1–86400 s, 0–1250 °C, 1–15000 W/(m² K).');if(s.mode!==undefined&&!['ramp','step'].includes(s.mode))throw Error('Mediumverlauf: linear oder Sprung wählen.');total+=s.duration;}if(total>172800)throw Error('Gesamtdauer höchstens 48 Stunden.');return total;}
 // Implicit finite volumes in half-slab / infinite cylinder, one symmetric boundary.
 export function mesh(size,shape,n=32){const R=size/2000,dx=R/n;return Array.from({length:n},(_,i)=>({x:(i+.5)*dx,volume:shape==='rod'?((i+1)**2-i**2)*dx*dx/2:dx,left:shape==='rod'?i*dx:1,right:shape==='rod'?(i+1)*dx:1,dx}));}
 export function heatStep(old,grid,m,bath,h,dt){
@@ -54,11 +56,11 @@ export function heatStep(old,grid,m,bath,h,dt){
 export function run(m,stages,{size=20,shape='plate',n=32,controlled=false,rate=10}={}){
  const total=validateStages(stages);if(!Number.isFinite(size)||size<1||size>200||!['plate','rod'].includes(shape)||!Number.isInteger(n)||n<4||n>128||!Number.isFinite(rate)||rate<.001||rate>1000)throw Error('Geometrie: 1–200 mm; Kühlrate: 0,001–1000 K/s.');
  const grid=mesh(size,shape,n);let temps=Array(n).fill(20);const states=grid.map(()=>({...blankState(),...equilibrium(m.c,20),ready:false}));const frames=[];let time=0,bath0=20,next=0;const every=total/220;const q=critical(m);
- function save(label,bath){frames.push({time,bath,label,temps:[...temps],states:states.map(s=>({...s})),mean:average(states,grid),meanT:average(temps,grid)});}
+ function save(label,bath){frames.push({time,bath,label,temps:[...temps],states:m.kinetic?states.map(s=>({...s})):null,mean:m.kinetic?average(states,grid):null,meanT:average(temps,grid)});}
  save('Ausgangszustand',20);
  for(const stage of stages){let elapsed=0;const startBath=bath0;while(elapsed<stage.duration-1e-8){
- const cooling=stage.target<startBath,dt=Math.min(stage.duration-elapsed,cooling&&stage.h>300?1:15);elapsed+=dt;time+=dt;
- const frac=clamp(elapsed/stage.duration,0,1);let bath=cooling&&stage.h>300?stage.target:startBath+(stage.target-startBath)*frac;
+ const cooling=stage.target<startBath,step=stage.mode==='step',dt=Math.min(stage.duration-elapsed,cooling&&(step||controlled)?1:15);elapsed+=dt;time+=dt;
+ const frac=clamp(elapsed/stage.duration,0,1);let bath=step?stage.target:startBath+(stage.target-startBath)*frac;
  if(controlled&&cooling)bath=Math.max(stage.target,startBath-rate*elapsed);
  const previous=temps;temps=heatStep(temps,grid,m,bath,stage.h,dt);
  if(m.kinetic){for(let i=0;i<n;i++){const s=states[i],T=temps[i];if(T>=q.a3+10){Object.assign(s,blankState(),{ready:true,minT:T});}
@@ -70,7 +72,7 @@ export function run(m,stages,{size=20,shape='plate',n=32,controlled=false,rate=1
  const last=frames.at(-1);const fully=states.every(s=>s.ready);const warnings=[];
  if(!m.kinetic)warnings.push('Nur Temperaturrechnung: keine belastbare Kinetik für diesen Werkstoff hinterlegt. Gefügeanteile und Festigkeiten werden nicht ausgegeben.');
  else {warnings.push('Unkalibriertes Lehrmodell: C-Kurven, Gefügeanteile und Härte sind Prognosen ohne Validierung an dieser Stahlsorte.');if(!fully)warnings.push('Nicht vollständig austenitisiert: Kern/Rand hat die Modellschwelle nicht erreicht. Teil-Austenitisierung und Glühvorgänge sind nicht quantitativ abgebildet.');if(last.temps.some(T=>T>100))warnings.push('Bauteil am Ende noch warm: Endhärte / Zugfestigkeit nicht verfügbar.');if(states.some(s=>s.A>.05))warnings.push('Mehr als 5 % verbleibender Austenit: Festigkeitsabschätzung unterdrückt.');if(m.id==='16mncr5')warnings.push('Keine Aufkohlung: Ergebnis betrifft ausschließlich den Kernwerkstoff.');}
- return {m,stages,grid,frames,total,size,shape,controlled,rate,fully,warnings};
+ return {modelQuality:m.kinetic?'uncalibrated-teaching-prediction':'thermal-reference-only',experimentallyValidated:false,m,stages,grid,frames,total,size,shape,controlled,rate,fully,warnings};
 }
 export function average(data,grid){const v=grid.reduce((a,g)=>a+g.volume,0);if(typeof data[0]==='number')return data.reduce((a,x,i)=>a+x*grid[i].volume,0)/v;const out={};for(const key of [...PHASES,'temperDose'])out[key]=data.reduce((a,s,i)=>a+s[key]*grid[i].volume,0)/v;return out;}
 // Both diagrams use precisely the kinetics used for the spatial result.

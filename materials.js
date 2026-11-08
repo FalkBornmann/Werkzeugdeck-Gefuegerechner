@@ -1,5 +1,7 @@
 // Representative compositions, not certificates. Sources checked 2026-11-08.
 export const SOURCES = [
+ ['World Steel Association: What is steel?','https://worldsteel.org/wp-content/uploads/steelFacts-2024.pdf','Begriffsgrenze um 2 Massen-% C; nicht mit der maximalen Austenitlöslichkeit verwechseln.'],
+ ['ASM: Steel and the Iron-Carbon Phase Diagram','https://dl.asminternational.org/technical-books/monograph/96/chapter-abstract/2109098/Steel-and-the-Iron-Carbon-Phase-Diagram','Fachbuch zur Einordnung des Fe–C-Diagramms. Volltext kann zugangsbeschränkt sein.'],
  ['Cambridge: Transformation models / required inputs','https://www.phase-trans.msm.cam.ac.uk/map/steel/programs/MAP_STEEL_CCT.html','Zusammensetzung, Austenitkorngröße und Temperaturverlauf sind Modelleingaben. Das hier verwendete Lehrmodell ist keine Implementierung von MAP.'],
  ['Cambridge: Andrews Ms relationship','https://www.phase-trans.msm.cam.ac.uk/2012/Chester_Thesis.pdf','Empirische Martensitstarttemperatur; keine allgemeine Formel für hochlegierte Werkzeugstähle.'],
  ['Bhadeshia: martensite kinetics','https://www.phase-trans.msm.cam.ac.uk/2013/Multiple.pdf','Koistinen–Marburger und Konkurrenz um verbleibenden Austenit.'],
@@ -12,7 +14,7 @@ export const GROUPS = [['model','Unlegierter Modellstahl'],['carbon','Unlegierte
 const ovako = slug => 'https://steelnavigator.ovako.com/steel-grades/'+slug+'/';
 const bohler = slug => 'https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/'+slug+'_en_gb.pdf';
 export const MATERIALS = [
- {id:'model',group:'model',name:'Fe–C · Kohlenstoff frei wählen',aliases:[],c:.45,mn:0,si:0,cr:0,mo:0,ni:0,k:40,rho:7800,cp:600,aust:850,hold:1200,temper:550,source:SOURCES[0][1],ref:'Idealisierter binärer Fe–C-Stahl; keine konkrete Stahlsorte.'},
+ {id:'model',group:'model',name:'Fe–C · Kohlenstoff frei wählen',aliases:[],c:.45,mn:0,si:0,cr:0,mo:0,ni:0,k:40,rho:7800,cp:600,aust:850,hold:1200,temper:550,source:SOURCES[2][1],ref:'Idealisierter binärer Fe–C-Stahl; keine konkrete Stahlsorte.'},
  {id:'c45',group:'carbon',name:'C45 · 1.0503',aliases:['C45E','1.1191','SAE 1045','AISI 1045'],c:.45,mn:.7,si:.25,cr:0,mo:0,ni:0,k:40,rho:7800,cp:600,aust:855,hold:1200,temper:550,source:ovako('c45'),ref:'Ovako: Wärmebehandlung und Zusammensetzungsbereiche. C45E ist eine verwandte Sorte mit eigenen Reinheitsanforderungen.'},
  {id:'42crmo4',group:'alloy',name:'42CrMo4 · 1.7225',aliases:['SAE 4140','AISI 4140','42CrMoS4','1.7227'],c:.42,mn:.75,si:.25,cr:1.05,mo:.22,ni:0,k:35,rho:7800,cp:600,aust:860,hold:1200,temper:600,ac1:740,ac3:770,msRef:320,source:ovako('42crmo4'),ref:'Ovako: Referenz Ms 320 °C; Härten 840–880 °C, Anlassen 540–680 °C. Referenzwerte gelten nicht für jede Charge.'},
  {id:'16mncr5',group:'case',name:'16MnCr5 · 1.7131',aliases:['SAE 5115','SCr415'],c:.165,mn:1.15,si:.25,cr:.95,mo:0,ni:0,k:42,rho:7800,cp:600,aust:880,hold:1200,temper:180,ac1:734,ac3:827,msRef:430,source:ovako('16mncr5'),ref:'Ovako: Einsatzstahl. Nur unveränderter Kern-C-Gehalt wird berechnet; Aufkohlung und Einsatzhärtetiefe sind nicht modelliert.'},

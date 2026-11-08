@@ -33,7 +33,7 @@ export function render(kind,c,v){const {m,diagram,result,index=0,probe=0,view='t
  if(kind==='temperature'){
  const stages=result?.stages||v.stages,total=stages.reduce((a,s)=>a+s.duration,0);const a=axes(c,'Temperatur-Zeit-Verlauf · '+m.name,total/60,1250,{xlabel:'Prozesszeit [min]',ylabel:'Temperatur [°C]',note:'Ofen / Medium ≠ Bauteiltemperatur · Haltezeit im Editor beginnt mit dem Prozessschritt'});
  if(result){for(const [key,col] of [['bath','#9a8463'],['core','#183f32'],['edge','#c86146']])line(c,result.frames.map(p=>[a.x(p.time/60),a.y(key==='bath'?p.bath:p.temps[key==='core'?0:p.temps.length-1])]),col,key==='bath'?1:3,key==='bath'?[5,4]:[]);line(c,[[a.x(f.time/60),85],[a.x(f.time/60),365]],'#333',1,[4,4]);}
- else{let t=0,old=20;const pts=[[a.x(0),a.y(20)]];for(const s of stages){if(s.target<old&&s.h>300)pts.push([a.x(t/60),a.y(s.target)]);t+=s.duration;pts.push([a.x(t/60),a.y(s.target)]);old=s.target;}line(c,pts,'#9a8463',3);}
+ else{let t=0,old=20;const pts=[[a.x(0),a.y(20)]];for(const s of stages){if(s.mode==='step')pts.push([a.x(t/60),a.y(s.target)]);t+=s.duration;pts.push([a.x(t/60),a.y(s.target)]);old=s.target;}line(c,pts,'#9a8463',3);}
  text(c,'Sand: Ofen / Medium · Grün: Kern · Rot: Rand',95,402,'#53645b',15);return;
  }
  if(kind==='fractions'){
