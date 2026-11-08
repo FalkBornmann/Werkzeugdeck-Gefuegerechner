@@ -1,3 +1,5 @@
+import {mesh,heatStep,rectangleMesh,heatStep2D} from './thermal.js';
+export {mesh,heatStep,rectangleMesh,heatStep2D} from './thermal.js';
 // All transformation curves are explicitly uncalibrated teaching predictions.
 export const PHASES=['A','F','P','B','M','TM','K'];
 export const LABELS={A:'Austenit / Rest-Austenit',F:'Ferrit',P:'Perlit',B:'Bainit',M:'Martensit',TM:'Angelassener Martensit',K:'Proeutektoider Zementit'};
@@ -46,33 +48,26 @@ export function preset(m,name){
  }}stages.push({duration:3600,target:20,h:45,label:'Bei Raumtemperatur auskühlen'});return withModes(stages);
 }
 export function validateStages(stages){if(!Array.isArray(stages)||!stages.length||stages.length>20)throw Error('1 bis 20 Prozessschritte erforderlich.');let total=0;for(const s of stages){for(const key of ['duration','target','h'])if(!Number.isFinite(s[key]))throw Error('Alle Prozessparameter müssen Zahlen sein.');if(s.duration<1||s.duration>86400||s.target<0||s.target>1250||s.h<1||s.h>15000)throw Error('Grenzen: 1–86400 s, 0–1250 °C, 1–15000 W/(m² K).');if(s.mode!==undefined&&!['ramp','step'].includes(s.mode))throw Error('Mediumverlauf: linear oder Sprung wählen.');total+=s.duration;}if(total>172800)throw Error('Gesamtdauer höchstens 48 Stunden.');return total;}
-// Implicit finite volumes in half-slab / infinite cylinder, one symmetric boundary.
-export function mesh(size,shape,n=32){const R=size/2000,dx=R/n;return Array.from({length:n},(_,i)=>({x:(i+.5)*dx,volume:shape==='rod'?((i+1)**2-i**2)*dx*dx/2:dx,left:shape==='rod'?i*dx:1,right:shape==='rod'?(i+1)*dx:1,dx}));}
-export function heatStep(old,grid,m,bath,h,dt){
- const n=old.length,lo=[],di=[],up=[],rhs=[];
- for(let i=0;i<n;i++){const g=grid[i],cap=m.rho*m.cp*g.volume/dt,L=i?m.k*g.left/g.dx:0,U=i<n-1?m.k*g.right/g.dx:g.right/(1/h+g.dx/(2*m.k));lo[i]=-L;up[i]=i<n-1?-U:0;di[i]=cap+L+U;rhs[i]=cap*old[i]+(i===n-1?U*bath:0);}
- for(let i=1;i<n;i++){const f=lo[i]/di[i-1];di[i]-=f*up[i-1];rhs[i]-=f*rhs[i-1];}const out=new Array(n);out[n-1]=rhs[n-1]/di[n-1];for(let i=n-2;i>=0;i--)out[i]=(rhs[i]-up[i]*out[i+1])/di[i];return out;
-}
-export function run(m,stages,{size=20,shape='plate',n=32,controlled=false,rate=10}={}){
- const total=validateStages(stages);if(!Number.isFinite(size)||size<1||size>200||!['plate','rod'].includes(shape)||!Number.isInteger(n)||n<4||n>128||!Number.isFinite(rate)||rate<.001||rate>1000)throw Error('Geometrie: 1–200 mm; Kühlrate: 0,001–1000 K/s.');
- const grid=mesh(size,shape,n);let temps=Array(n).fill(20);const states=grid.map(()=>({...blankState(),...equilibrium(m.c,20),ready:false}));const frames=[];let time=0,bath0=20,next=0;const every=total/220;const q=critical(m);
+export function run(m,stages,{size=20,height=40,shape='plate',n=20,controlled=false,rate=10}={}){
+ const total=validateStages(stages);if(!Number.isFinite(size)||size<1||size>200||!['plate','rod'].includes(shape)||shape==='plate'&&(!Number.isFinite(height)||height<1||height>200)||!Number.isInteger(n)||n<4||n>64||!Number.isFinite(rate)||rate<.001||rate>1000)throw Error('Geometrie: 1–200 mm; Kühlrate: 0,001–1000 K/s.');
+ const nx=n,ny=shape==='plate'?n:1;const grid=shape==='plate'?rectangleMesh(size,height,nx,ny):mesh(size,shape,n).map((g,i)=>({...g,y:0,ix:i,iy:0}));const count=grid.length;let temps=Array(count).fill(20);const states=grid.map(()=>({...blankState(),...equilibrium(m.c,20),ready:false}));const frames=[],traces=[];let time=0,bath0=20,next=0;const every=total/220;const q=critical(m);
  function save(label,bath){frames.push({time,bath,label,temps:[...temps],states:m.kinetic?states.map(s=>({...s})):null,mean:m.kinetic?average(states,grid):null,meanT:average(temps,grid)});}
- save('Ausgangszustand',20);
- for(const stage of stages){let elapsed=0;const startBath=bath0;while(elapsed<stage.duration-1e-8){
+ save('Ausgangszustand',20);traces.push({time:0,bath:20,core:20,edge:20,corner:20,stageIndex:0});
+ for(const [stageIndex,stage] of stages.entries()){let elapsed=0;const startBath=bath0;while(elapsed<stage.duration-1e-8){
  const cooling=stage.target<startBath,step=stage.mode==='step',dt=Math.min(stage.duration-elapsed,cooling&&(step||controlled)?1:15);elapsed+=dt;time+=dt;
  const frac=clamp(elapsed/stage.duration,0,1);let bath=step?stage.target:startBath+(stage.target-startBath)*frac;
  if(controlled&&cooling)bath=Math.max(stage.target,startBath-rate*elapsed);
- const previous=temps;temps=heatStep(temps,grid,m,bath,stage.h,dt);
- if(m.kinetic){for(let i=0;i<n;i++){const s=states[i],T=temps[i];if(T>=q.a3+10){Object.assign(s,blankState(),{ready:true,minT:T});}
+ const previous=temps;temps=shape==='plate'?heatStep2D(temps,grid,m,bath,stage.h,dt,nx,ny):heatStep(temps,grid,m,bath,stage.h,dt);traces.push({time,bath,core:temps[0],edge:temps[nx-1],corner:temps.at(-1),stageIndex});
+ if(m.kinetic){for(let i=0;i<count;i++){const s=states[i],T=temps[i];if(T>=q.a3+10){Object.assign(s,blankState(),{ready:true,minT:T});}
  else if(s.ready&&T<q.a1&&T<=previous[i]+1e-9)transform(s,m,T,dt);
  else if(s.ready&&T<q.a1&&T>previous[i]&&s.M>0){const d=dt/3600*Math.exp(clamp((T-450)/65,-15,8));s.temperDose+=d;const dm=s.M*(-Math.expm1(-d));s.M-=dm;s.TM+=dm;}
  }}
- if(time>=next||elapsed>=stage.duration-1e-8){save(stage.label,bath);next=time+every;}
+ const rapidCooling=cooling&&(step||controlled),difference=Math.max(...temps.map(T=>Math.abs(T-bath))),spacing=rapidCooling&&difference>10?Math.min(every,elapsed<120?2:15):every;if(time>=next||elapsed<=dt+1e-8||elapsed>=stage.duration-1e-8){save(stage.label,bath);next=time+spacing;}
  }bath0=frames.at(-1).bath;}
  const last=frames.at(-1);const fully=states.every(s=>s.ready);const warnings=[];
  if(!m.kinetic)warnings.push('Nur Temperaturrechnung: keine belastbare Kinetik für diesen Werkstoff hinterlegt. Gefügeanteile und Festigkeiten werden nicht ausgegeben.');
  else {warnings.push('Unkalibriertes Lehrmodell: C-Kurven, Gefügeanteile und Härte sind Prognosen ohne Validierung an dieser Stahlsorte.');if(!fully)warnings.push('Nicht vollständig austenitisiert: Kern/Rand hat die Modellschwelle nicht erreicht. Teil-Austenitisierung und Glühvorgänge sind nicht quantitativ abgebildet.');if(last.temps.some(T=>T>100))warnings.push('Bauteil am Ende noch warm: Endhärte / Zugfestigkeit nicht verfügbar.');if(states.some(s=>s.A>.05))warnings.push('Mehr als 5 % verbleibender Austenit: Festigkeitsabschätzung unterdrückt.');if(m.id==='16mncr5')warnings.push('Keine Aufkohlung: Ergebnis betrifft ausschließlich den Kernwerkstoff.');}
- return {modelQuality:m.kinetic?'uncalibrated-teaching-prediction':'thermal-reference-only',experimentallyValidated:false,m,stages,grid,frames,total,size,shape,controlled,rate,fully,warnings};
+ return {modelQuality:m.kinetic?'uncalibrated-teaching-prediction':'thermal-reference-only',experimentallyValidated:false,m,stages,grid,frames,traces,total,size,height:shape==='plate'?height:0,nx,ny,shape,controlled,rate,fully,warnings};
 }
 export function average(data,grid){const v=grid.reduce((a,g)=>a+g.volume,0);if(typeof data[0]==='number')return data.reduce((a,x,i)=>a+x*grid[i].volume,0)/v;const out={};for(const key of [...PHASES,'temperDose'])out[key]=data.reduce((a,s,i)=>a+s[key]*grid[i].volume,0)/v;return out;}
 // Both diagrams use precisely the kinetics used for the spatial result.

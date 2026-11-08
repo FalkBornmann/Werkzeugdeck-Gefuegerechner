@@ -12,7 +12,7 @@ Quellen, Modellgleichungen, Koeffizienten, Werkstoffbedingungen, Nutzungshinweis
 
 ## Numerik
 
-Implizite 1D-Finite-Volumen-Wärmeleitung, 32 Zellen über halbe Plattendicke oder Radius. Konstante thermische Lehrwerte, Robin-Rand und Symmetrie im Kern. Konservative Wärmeflüsse; Volumenmittel bei Zylinder mit Ringgewichtung. Heuristische additive Umwandlungskinetik, Andrews/Hersteller-Ms, Koistinen–Marburger nur bei neuem Temperaturminimum. Sofortige Austenitisierung über oberer Modellgrenze +10 K. Anlassdosis und Härtemischung sind eigene illustrative Annahmen. Keine Rückkopplung der Umwandlungswärme.
+Platte: implizite 2D-Finite-Volumen-Wärmeleitung über einen symmetrischen Viertelquerschnitt mit 20 × 20 Zellen und zwei frei wählbaren Kantenlängen. Beide äußeren Ränder geben Wärme ab; Ecken kühlen dadurch in zwei Richtungen. Lösung durch implizites Richtungssplitting erster Ordnung. Rundstab: 20 radiale Zellen, langer Stab ohne Stirnflächen. Konstante thermische Lehrwerte, Robin-Rand und Symmetrie im Kern. Konservative Wärmeflüsse; Volumenmittel bei Zylinder mit Ringgewichtung. Heuristische additive Umwandlungskinetik, Andrews/Hersteller-Ms, Koistinen–Marburger nur bei neuem Temperaturminimum. Sofortige Austenitisierung über oberer Modellgrenze +10 K. Anlassdosis und Härtemischung sind eigene illustrative Annahmen. Keine Rückkopplung der Umwandlungswärme.
 
 ## Prüfen
 
@@ -28,3 +28,15 @@ Gefüllte Bereiche mit Start-/Endgrenzen. TTT: 1/99 % der isolierten Reaktion. C
 
 ## Zeitsteuerung
 Bei aktivem Simulationsverlauf läuft die Zeitsteuerung am unteren Bildschirmrand mit. Derselbe Regler steuert alle Grafiken. Die vorhandenen Wiedergabe- und Positionsfunktionen sind auch beim Betrachten weiter unten liegender Diagramme erreichbar. Die Leiste passt sich Mobilgeräten an und lässt sich mit Tastatur und Touch bedienen.
+
+## Prozess, Startbedingungen und räumliche Darstellung
+
+Ein Klick auf „Prozess in ZTU übertragen“ berechnet die Thermalhistorie an Kern, Flächenmitte und Ecke und zeigt die passende erste Abkühlung (CCT) oder Badhaltephase (TTT) mit korrektem Zeitnullpunkt. Anlasshaltezeiten werden nicht als isothermer Austenitzerfall eingeordnet. Der Gesamtprozess ist zusätzlich als ausdrücklich gekennzeichnete Orientierung darstellbar. Zeitmarker und bestehende mitlaufende Zeitsteuerung bleiben synchron.
+
+ZTU-Startbedingungen aus Prozess, Werkstoffpreset, freier Eingabe oder verfügbarer Herstellerreferenz wählbar. Das Lehrmodell verändert bei anderer Starttemperatur den CCT-Integrationsstart, modelliert jedoch keine austenitisierungsabhängige Korngröße/Karbidauflösung; TTT-Kinetik bleibt gleich. Referenz-PDFs werden nicht künstlich an andere Temperaturen angepasst. Ac1/Ac3 beziehungsweise Acm werden als Referenz oder Näherung beschriftet; unbekannte Werte für hochlegierte Sorten werden nicht erfunden.
+
+Die Farbkarte mischt Gefügefarben nach lokalen Anteilen und interpoliert räumlich zwischen Zellwerten. Einzelbestandteile sind als Prozentansicht wählbar. Eine höhenverstellbare horizontale Schnittlinie verbindet Ortsprofil und Punktablesung. CSV/JSON enthalten beide Koordinaten.
+
+## Prüfung der 2D-Erweiterung
+
+Zusätzliche Tests prüfen schnellere Ecken gegenüber Flächenmitten, Einfluss der zweiten Kantenlänge, Symmetrie, räumliche/zeitliche Verfeinerung, Grenzfall der unendlich ausgedehnten Platte, Volumenmittel und Phasensummen bei der Interpolation. Die zeitliche Pfadzuordnung trennt Anlasshaltezeiten von isothermem Austenitzerfall. Mobile Orts- und Zeitsteuerung sowie Diagrammdialoge wurden im Browser geprüft.
