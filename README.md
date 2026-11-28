@@ -1,3 +1,5 @@
+> **Archiv seit 28. November 2026.** Die aktuelle Entwicklung liegt im gemeinsamen Repository [FalkBornmann/Werkzeugdeck](https://github.com/FalkBornmann/Werkzeugdeck/tree/main/Werkstofftechnik/Simulation/Gefuegerechner). Dieses Repository erhält die frühere Historie. Neue Änderungen und weitere Tools ausschließlich im gemeinsamen Repository pflegen. [Onlinewerkzeug öffnen](https://werkzeugdeck.pages.dev/tools/gefuegerechner/).
+
 # Gefügerechner für Stähle
 
 Werkzeugdeck / Werkstofftechnik / Simulation. Statische Browseranwendung, keine Laufzeitabhängigkeiten; Berechnung in einem lokalen Modul-Worker.
